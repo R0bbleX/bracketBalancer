@@ -1,0 +1,40 @@
+package bracketBalancer
+
+import scala.collection.immutable.List;
+
+object isBalanced extends App {
+  def balanceBrackets(sentence: String): Any = {
+    def balance(sentence: String, openBrackets: List[Any], startPosition: Int): Any = {
+      if (sentence.length() == 0 && openBrackets.isEmpty) {
+        val success = "Success, your brackets are balanced!"
+        return success
+      }
+      else if (sentence.length() == 0) {
+        return openBrackets
+      }
+      else {
+        if (sentence.head == '[') {
+          val openBracket = List((sentence.charAt(0), startPosition))
+          val bracketStack = openBracket :: openBrackets
+          balance(sentence.tail, bracketStack, startPosition + 1)
+        }
+        else {
+          if (sentence.head == ']') {
+            val bracketStack = openBrackets.tail
+            balance(sentence.tail, bracketStack, startPosition + 1)
+          }
+          else balance(sentence.tail, openBrackets, startPosition + 1)
+        }
+      }
+    }
+    balance(sentence, List(), 0)
+  }
+
+  def printList(list: List[Any]): Unit = {
+    list.foreach(println)
+  }
+
+  println("bracketStack is: " + balanceBrackets("[][]"))
+}
+
+//Needs to handle (,[ and {
