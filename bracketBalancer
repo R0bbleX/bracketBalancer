@@ -3,38 +3,66 @@ package bracketBalancer
 import scala.collection.immutable.List;
 
 object isBalanced extends App {
-  def balanceBrackets(sentence: String): Any = {
-    def balance(sentence: String, openBrackets: List[Any], startPosition: Int): Any = {
-      if (sentence.length() == 0 && openBrackets.isEmpty) {
-        val success = "Success, your brackets are balanced!"
-        return success
-      }
-      else if (sentence.length() == 0) {
-        return openBrackets
-      }
-      else {
-        if (sentence.head == '[') {
-          val openBracket = List((sentence.charAt(0), startPosition))
-          val bracketStack = openBracket :: openBrackets
-          balance(sentence.tail, bracketStack, startPosition + 1)
+  
+  case class BracketPos(bracketType: Char, pos: Int)
+  
+  case class Pair(start: Char, end: Char)
+  
+  val brackets = List(Pair('[', ']'),Pair('{', '}'), Pair('(', ')'))
+  
+  def bb2(sentence: String): Option[BracketPos] = {
+    def balance(sentence: String, openBrackets: List[BracketPos], currentPos: Int): Option[BracketPos] = {
+
+      def lookForClosing(char: Char): Option[BracketPos] = {
+        val foundClosing = brackets.find(_.end == char)
+        foundClosing match {
+          case None =>
+            balance(sentence.tail, openBrackets, currentPos + 1)
+          case Some(pair) =>
+            openBrackets.headOption match {
+              case Some(ob) =>
+                if (ob.bracketType == pair.start)
+                  balance(sentence.tail, openBrackets.tail, currentPos + 1) // pop stack and move on
+                else Some(BracketPos(char, currentPos)) // closing bracket doesn't match our stack
+              case None =>
+                Some(BracketPos(char, currentPos)) // closing bracket doesn't match empty stack
+            }
         }
-        else {
-          if (sentence.head == ']') {
-            val bracketStack = openBrackets.tail
-            balance(sentence.tail, bracketStack, startPosition + 1)
+      }
+
+      sentence.headOption match {
+        case None =>
+          openBrackets.lastOption // if no last we pass, but if last, then that's the first unmatched thing (bottom of stack)
+        case Some(char) =>
+          val found: Option[Pair] = brackets.find(_.start == char)
+          found match {
+            case Some(p) =>
+              balance(sentence.tail, BracketPos(char, currentPos) :: openBrackets, currentPos + 1)
+            case None =>
+              lookForClosing(char)
           }
-          else balance(sentence.tail, openBrackets, startPosition + 1)
-        }
       }
     }
-    balance(sentence, List(), 0)
+
+    balance(sentence, List.empty, 0)
   }
 
-  def printList(list: List[Any]): Unit = {
-    list.foreach(println)
-  }
+  case class TestResult(input: String, output: Option[BracketPos])
 
-  println("bracketStack is: " + balanceBrackets("[][]"))
+  val data = List(
+    TestResult("abc", None),
+    TestResult("", None),
+    TestResult("(((())))", None),
+    TestResult("([])", None),
+    TestResult("(([", Some(BracketPos('(', 0))),
+    TestResult("((]))", Some(BracketPos(']', 2))),
+    TestResult("]]", Some(BracketPos(']', 0)))
+  )
+
+  data.foreach { d =>
+    val res = bb2(d.input)
+    if (res == d.output)
+      println(s"expected ${d.output}")
+    else println(s"unexpected $res")
+  }
 }
-
-//Needs to handle (,[ and {
